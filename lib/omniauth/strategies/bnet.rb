@@ -27,7 +27,7 @@ module OmniAuth
       def request_phase
         super
       end
-
+      
       def authorize_params
         super.tap do |params|
           %w[scope client_options].each do |v|
@@ -37,7 +37,7 @@ module OmniAuth
           end
         end
       end
-
+      
       uid { raw_info['id'].to_s }
 
       info do
@@ -51,7 +51,16 @@ module OmniAuth
 
         @raw_info = access_token.get('account/user').parsed
       end
-
+      # NOTE If we're using code from the signed request then FB sets the redirect_uri to '' during the authorize
+      #      phase and it must match during the access_token phase:
+      #      https://github.com/facebook/facebook-php-sdk/blob/master/src/base_facebook.php#L477
+      def callback_url
+        if @authorization_code_from_signed_request_in_cookie
+          ''
+        else
+          options[:callback_url] || super
+        end
+      end
       private
 
       def getHost(region)
